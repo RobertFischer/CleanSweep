@@ -10,19 +10,20 @@ Proper Usage
 
 * Check out this code. 
 
-* Execute `gradle jar` in the root directory of the project. If you want the JavaDocs, execute `gradle jar javadoc`
+* Execute `gradle clean jar javadoc` in the root directory of the project. 
 
-* The files you are looking for are under `./build`
+* The jar and the JavaDoc are under `./build/libs` and `./build/docs`, respectively.
 
 * Enjoy.
 
 Lazy Usage
 ------------
 
-* Look at the javadocs on GitHub.
+* Pull down the [jar directly from GitHub](https://github.com/RobertFischer/PhantomFinal/raw/master/build/libs/PhantomFinal.jar).
 
-* Pull down the jar directly from GitHub.
+* Use your favorite code inspector to see the documentation for `com.smokejumperit.phantomFinal.Sweeper`.
 
+* Enjoy.
 
 License
 ---------
