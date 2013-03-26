@@ -9,3 +9,5 @@ gc.out
 
 .gradle
 build
+
+.*.swp
