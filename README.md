@@ -12,7 +12,7 @@ Proper Usage
 
 * Execute `gradle clean jar javadoc` in the root directory of the project. 
 
-* The jar and the JavaDoc are under `./build/libs` and `./build/docs`, respectively.
+* The jar and the JavaDoc are under `./build/libs` and `./build/docs/javadoc`, respectively.
 
 * Enjoy.
 
@@ -28,4 +28,4 @@ Lazy Usage
 License
 ---------
 
-See `./LICENSE.md`
+See [`./LICENSE.md`](https://github.com/RobertFischer/PhantomFinal/blob/master/LICENSE.md)
