@@ -61,7 +61,8 @@ public class Sweeper {
 
 	/**
 	* Constructs an instance that uses the given ThreadFactory to create threads for polling and cleanup tasks.
-	* The ThreadFactory is used to construct an {@link ExecutorService}.
+	* The ThreadFactory is used to construct an {@link ExecutorService}. Currently, this is a {@link ThreadPoolExecutor},
+	* but that may change in a later implementation.
 	*/
 	public Sweeper(final ThreadFactory forExecutor) {
 		this(
@@ -72,12 +73,25 @@ public class Sweeper {
 	}
 
 	/**
-	* Constructs an instance that uses the given ExecutorService to execute polling and cleanup tasks.
+	* Constructs an instance that uses the given {@link Executor} to execute polling and cleanup tasks,
+	* including a background sweeping thread.
+	* Note that the executor is assumed to be able to execute blocking tasks. If (for instance)
+	* the executor executes all the tasks directly, the calling thread will hang.
 	*/
 	public Sweeper(final Executor executor) {
+		this(executor, true);
+	}
+
+	/**
+	* Constructs an instance that uses the given {@link Executor} to execute polling and cleanup tasks.
+	* If the second argument is {@code false}, the background sweeping thread will not be launched, and 
+	* the user will need to use {@link #sweep()} or {@link #queueingSweep()} to manually trigger polling
+	* of the queue.
+	*/
+	public Sweeper(final Executor executor, final boolean backgroundSweeping) {
 		if(executor == null) npe("Cannot accept a null Executor as an argument");
 		this.executor = executor;
-		this.executor.execute(new Runnable() {
+		if(backgroundSweeping) this.executor.execute(new Runnable() {
 			public void run() {
 				RunnableReference ref = null;
 				Runnable action = null;
@@ -157,7 +171,7 @@ public class Sweeper {
 			public Thread newThread(final Runnable r) {
 				final Thread t = new Thread(r);
 				t.setName("Sweeper Cleanup Thread #" + Long.toHexString(ctr.getAndDecrement()));
-				t.setPriority(Thread.MAX_PRIORITY);
+				t.setPriority(Thread.MIN_PRIORITY);
 				t.setDaemon(true);
 				return t;
 			}
@@ -196,6 +210,38 @@ public class Sweeper {
 
 	private static <T> T npe(Class<T> returnType, String message) {
 		throw new NullPointerException(message);
+	}
+
+	/**
+	* Performs a sweep and cleanup in the current thread.
+	* 
+	* @return Whether work was found during this poll.
+	*/
+	public boolean sweep() {
+		boolean workFound = false;
+		RunnableReference action = null;
+		while( (action = (RunnableReference)queue.poll()) != null) {
+			bag.remove(action);
+			action.run();
+			workFound = true;
+		}
+		return workFound;
+	}
+
+	/**
+	* Performs a sweep in the current thread, but cleanup work is done via the {@link Executor}.
+	* 
+	* @return Whether work was found during this poll.
+	*/
+	public boolean queueingSweep() {
+		boolean workFound = false;
+		RunnableReference action = null;
+		while( (action = (RunnableReference)queue.poll()) != null) {
+			workFound = true;
+			executor.execute(new RemoveFromBag(action));
+			executor.execute(action);
+		}
+		return workFound;
 	}
 
 }
