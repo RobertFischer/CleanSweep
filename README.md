@@ -3,8 +3,8 @@ PhantomFinal
 
 Finalization substitute based on a PhantomReference queue.
 
-Usage
--------
+Proper Usage
+-------------
 
 * Install [Gradle](http://gradle.org) if you do not have it.
 
@@ -15,6 +15,13 @@ Usage
 * The files you are looking for are under `./build`
 
 * Enjoy.
+
+Lazy Usage
+------------
+
+* Look at the javadocs on GitHub.
+
+* Pull down the jar directly from GitHub.
 
 
 License
