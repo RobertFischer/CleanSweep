@@ -10,9 +10,9 @@ Usage
 
 * Check out this code. 
 
-* Execute `gradle jar` in the root directory of the project. If you want the JavaDocs, execute `gradle jar javadoc`.
+* Execute `gradle jar` in the root directory of the project. If you want the JavaDocs, execute `gradle jar javadoc`
 
-* The files you are looking for are under `./build`.
+* The files you are looking for are under `./build`
 
 * Enjoy.
 
@@ -20,4 +20,4 @@ Usage
 License
 ---------
 
-See `./LICENSE.md`.
+See `./LICENSE.md`
