@@ -29,7 +29,7 @@ s.onGC(someObjectToTrack, new Runnable() {
 s.onSoftGC(someObjectToTrack, new Sweeper.SweepAction<SomeObjectToTracksType>() {
 	public void run() {
 		/* Implement behavior to perform when the object is softly reachable here */
-		/* The object can be retrieved by calling <tt>getTarget()</tt>. */
+		/* The object can be retrieved by calling getTarget(). */
 	}
 });
 ```
