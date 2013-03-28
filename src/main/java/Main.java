@@ -1,4 +1,4 @@
-import com.smokejumperit.phantomFinal.Sweeper;
+import com.smokejumperit.cleanSweep.Sweeper;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.*;
 

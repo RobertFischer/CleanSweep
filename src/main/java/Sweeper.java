@@ -1,4 +1,4 @@
-package com.smokejumperit.phantomFinal;
+package com.smokejumperit.cleanSweep;
 
 import java.lang.ref.*;
 import java.util.*;
@@ -13,10 +13,44 @@ public class Sweeper {
 	private final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
 	private final Executor executor;	
 
-	private final class RunnableReference extends PhantomReference<Object> implements Runnable {
+	private interface RunnableReference extends Runnable {
+		public Runnable consumeAction();
+	}
+
+	/**
+	* An action performed when a sweep occurs and the target is known.
+	*/
+	public static abstract class SweepAction<T> implements Runnable {
+
+		private T target;
+
+		/**
+		* Retrives the object which triggered the cleanup action.
+		*/
+		public T getTarget() { 
+			return target; 
+		}
+
+		/**
+		* Sets the object which triggered the cleanup action.
+		*/
+		public void setTarget(T target) {
+			this.target = target;
+		}
+
+		/**
+		* Performs the action to clean up. When this class is called by {@link Sweeper}, 
+		* {@link #setTarget(Object)} is guaranteed to have been called with a non-{@code null} 
+		* value.
+		*/
+		public abstract void run();
+
+	}
+
+	private final class RunnablePhantomReference extends PhantomReference<Object> implements RunnableReference {
 		private Runnable action;
 
-		public RunnableReference(Object toRun, Runnable action) {
+		public RunnablePhantomReference(Object toRun, Runnable action) {
 			super(toRun, queue);
 			this.action = action;
 		}
@@ -33,7 +67,29 @@ public class Sweeper {
 			if(action != null) action.run();
 			return;
 		}
+	}
 
+	private final class RunnableSoftReference<T> extends SoftReference<T> implements RunnableReference {
+		private SweepAction<T> action;
+
+		public RunnableSoftReference(T toRun, SweepAction<T> action) {
+			super(toRun, queue);
+			this.action = action;
+		}
+
+		public synchronized Runnable consumeAction() {
+			if(action == null) return null;
+			SweepAction<T> toReturn = action;
+			action = null;
+			toReturn.setTarget(this.get());
+			return toReturn;
+		}
+
+		public void run() {
+			Runnable action = consumeAction();
+			if(action != null) action.run();
+			return;
+		}
 	}
 
 	private final Queue<RunnableReference> bag = new ConcurrentLinkedQueue<RunnableReference>();
@@ -159,10 +215,38 @@ public class Sweeper {
 	}
 
 	/**
+	* Register an action to be performed when the key is eligible to be garbage collected.
+	* More precisely, it is performed at some point after the key becomes softly reachable.
+	*/
+	public <T> void onSoftGC(final T key, final SweepAction<T> behavior) {
+		bag.add(new RunnableSoftReference<T>(key, behavior));
+	}
+
+	/**
+	* Register an action to be performed when the key is eligible to be garbage collected.
+	* More precisely, it is performed at some point after the key becomes softly reachable.
+	*/
+	public <T> void onSoftGC(final T key, final Runnable behavior) {
+		bag.add(new RunnableSoftReference<T>(key, new SweepAction<T>() {
+			/**
+			* Ignore the target setting, since nobody knows about it.
+			*/
+			public void setTarget(T target) {}
+
+			/**
+			* Just delegate back to the behavior.
+			*/
+			public void run() {
+				behavior.run();
+			} 
+		}));
+	}
+
+	/**
 	* Register an action to be performed after the key is garbage collected.
 	*/
 	public void onGC(final Object key, final Runnable behavior) {
-		bag.add(new RunnableReference(key, behavior));
+		bag.add(new RunnablePhantomReference(key, behavior));
 	}
 
 	private static ThreadFactory createThreadFactory() {
