@@ -9,7 +9,7 @@
      href="http://github.com/RobertFischer">
     <span property="dct:title">Robert Fischer</span></a>
   has waived all copyright and related or neighboring rights to
-  <span property="dct:title">PhantomFinal</span>.
+  <span property="dct:title">CleanSweep</span>.
 This work is published from:
 <span property="vcard:Country" datatype="dct:ISO3166"
       content="US" about="http://github.com/RobertFischer">
