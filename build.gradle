@@ -5,3 +5,13 @@ jar {
 		attributes 'Main-Class': 'Main'
 	}
 }
+
+javadoc {
+	configure(options) {
+		windowTitle = "$project.name API - Smokejumper IT"
+		docTitle = "$project.name JavaDoc"
+		use = true
+		links = [ 'http://download.oracle.com/javase/7/docs/api/' ]
+		verbose = true
+	}
+}

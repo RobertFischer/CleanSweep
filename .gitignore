@@ -10,3 +10,5 @@ gc.out
 .gradle
 
 .*.swp
+
+build/tmp

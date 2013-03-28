@@ -37,6 +37,12 @@ s.onSoftGC(someObjectToTrack, new Sweeper.SweepAction<SomeObjectToTracksType>() 
 Features
 -----------
 
+* Sane concurrency configuration provided by default, or override it with your own `Executor` or `ThreadFactory`.
+
+* Execute code on garbage collection or right before garbage collection (softly reachable).
+
+* Simple, object-oriented API.
+
 Proper Usage
 -------------
 
