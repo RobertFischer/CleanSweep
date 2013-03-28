@@ -1,7 +1,7 @@
-PhantomFinal
+CleanSweep
 ============
 
-Finalization substitute based on a PhantomReference queue.
+Finalization substitute and cache assistance based on a reference queues and the Java `Executor` concurrency structure.
 
 Proper Usage
 -------------
@@ -19,13 +19,13 @@ Proper Usage
 Lazy Usage
 ------------
 
-* Pull down the [jar directly from GitHub](https://github.com/RobertFischer/PhantomFinal/raw/master/build/libs/PhantomFinal.jar).
+* Pull down the [jar directly from GitHub](https://github.com/RobertFischer/CleanSweep/raw/master/build/libs/CleanSweep.jar).
 
-* Use your favorite code inspector to see the documentation for `com.smokejumperit.phantomFinal.Sweeper`.
+* Use your favorite code inspector to see the documentation for `com.smokejumperit.cleanSweep.Sweeper`.
 
 * Enjoy.
 
 License
 ---------
 
-See [`./LICENSE.md`](https://github.com/RobertFischer/PhantomFinal/blob/master/LICENSE.md)
+See [`./LICENSE.md`](https://github.com/RobertFischer/CleanSweep/blob/master/LICENSE.md)
