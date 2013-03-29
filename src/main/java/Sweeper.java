@@ -70,18 +70,20 @@ public class Sweeper {
 	}
 
 	private final class RunnableSoftReference<T> extends SoftReference<T> implements RunnableReference {
-		private SweepAction<T> action;
+		private Runnable action;
 
-		public RunnableSoftReference(T toRun, SweepAction<T> action) {
+		public RunnableSoftReference(T toRun, Runnable action) {
 			super(toRun, queue);
 			this.action = action;
 		}
 
 		public synchronized Runnable consumeAction() {
 			if(action == null) return null;
-			SweepAction<T> toReturn = action;
+			Runnable toReturn = action;
 			action = null;
-			toReturn.setTarget(this.get());
+			if(toReturn instanceof SweepAction) {
+				((SweepAction<T>)toReturn).setTarget(this.get());
+			}
 			return toReturn;
 		}
 
@@ -227,19 +229,7 @@ public class Sweeper {
 	* More precisely, it is performed at some point after the key becomes softly reachable.
 	*/
 	public <T> void onSoftGC(final T key, final Runnable behavior) {
-		bag.add(new RunnableSoftReference<T>(key, new SweepAction<T>() {
-			/**
-			* Ignore the target setting, since nobody knows about it.
-			*/
-			public void setTarget(T target) {}
-
-			/**
-			* Just delegate back to the behavior.
-			*/
-			public void run() {
-				behavior.run();
-			} 
-		}));
+		bag.add(new RunnableSoftReference<T>(key, behavior));
 	}
 
 	/**
