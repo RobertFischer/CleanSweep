@@ -3,6 +3,9 @@ CleanSweep
 
 Finalization substitute and cache assistance based on a reference queues and the Java `Executor` concurrency structure.
 
+(If you don't know why `finalize()` is pretty much worthless (bordering on evil), 
+then [let me Google that for you](http://bit.ly/ZAmcnA).)
+
 Example Use Cases
 -------------------
 
