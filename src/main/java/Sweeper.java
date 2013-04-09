@@ -48,7 +48,7 @@ public class Sweeper {
 	}
 
 	private final class RunnablePhantomReference extends PhantomReference<Object> implements RunnableReference {
-		private Runnable action;
+		private volatile Runnable action;
 
 		public RunnablePhantomReference(Object toRun, Runnable action) {
 			super(toRun, queue);
@@ -69,10 +69,10 @@ public class Sweeper {
 		}
 	}
 
-	private final class RunnableSoftReference<T> extends SoftReference<T> implements RunnableReference {
-		private Runnable action;
+	private final class RunnableWeakReference<T> extends WeakReference<T> implements RunnableReference {
+		private volatile Runnable action;
 
-		public RunnableSoftReference(T toRun, Runnable action) {
+		public RunnableWeakReference(T toRun, Runnable action) {
 			super(toRun, queue);
 			this.action = action;
 		}
@@ -152,34 +152,18 @@ public class Sweeper {
 		if(backgroundSweeping) this.executor.execute(new Runnable() {
 			public void run() {
 				RunnableReference ref = null;
-				Runnable action = null;
 				try {
 					for(ref = (RunnableReference)queue.remove(); ref != null; ref = (RunnableReference)queue.poll()) {
-						action = ref.consumeAction();
 						executor.execute(new RemoveFromBag(ref));
-						if(action != null) {
-							executor.execute(action);
-							action = null;
-						}
+						executor.execute(ref);
 					}
 
 					// Now queue ourselves up to run again
 					executor.execute(this);
-
 				} catch(Exception e) {
-					// Clean up from whatever state we were in
-					if(action != null) {
-						action.run();
-						action = null;
-					}
 					if(ref != null) {
 						bag.remove(ref);
-						action = ref.consumeAction();
-						ref = null;
-						if(action != null) {
-							action.run();
-							action = null;
-						}
+						ref.run();
 					}
 					return;
 				}
@@ -217,18 +201,18 @@ public class Sweeper {
 
 	/**
 	* Register an action to be performed when the key is eligible to be garbage collected.
-	* More precisely, it is performed at some point after the key becomes softly reachable.
+	* More precisely, it is performed at some point after the key becomes weakly reachable.
 	*/
-	public <T> void onSoftGC(final T key, final SweepAction<T> behavior) {
-		bag.add(new RunnableSoftReference<T>(key, behavior));
+	public <T> void onWeakGC(final T key, final SweepAction<T> behavior) {
+		bag.add(new RunnableWeakReference<T>(key, behavior));
 	}
 
 	/**
 	* Register an action to be performed when the key is eligible to be garbage collected.
-	* More precisely, it is performed at some point after the key becomes softly reachable.
+	* More precisely, it is performed at some point after the key becomes weakly reachable.
 	*/
-	public <T> void onSoftGC(final T key, final Runnable behavior) {
-		bag.add(new RunnableSoftReference<T>(key, behavior));
+	public <T> void onWeakGC(final T key, final Runnable behavior) {
+		bag.add(new RunnableWeakReference<T>(key, behavior));
 	}
 
 	/**
@@ -319,6 +303,53 @@ public class Sweeper {
 			Thread.yield();
 		}
 		return workFound;
+	}
+
+	/**
+	* Enqueue a {@link #queueingSweep()} to be performed by the {@link Executor}.
+	* There is no feedback fromt his sweep, so it is fire-and-forget.
+	*/
+	public void runSweep() {
+		executor.execute(new DoSweep());
+	}
+
+	/**
+	* Enqueue a {@link #queueingSweep()} to be performed by the {@link Executor}.
+	*
+	* <b>Implementation Note:</b><br />
+	* There is a nontrivial effficiency hit if you used {@link #Sweeper(Executor}}
+	* and did <i>not</i> pass in a {@link ExecutorService}. We end up having to
+	* allocate a wrapper for each call to this method to make pretend it's a
+	* service. See {@link #runSweep()} for a better option in that case.
+	*
+	* @return A {@link Future} denoting whether work was found during this sweep.
+	*/
+	public Future<Boolean> enqueueSweep() {
+		if(executor instanceof ExecutorService) {
+			return enqueueSweepInService((ExecutorService)executor);
+		} else {
+			return enqueueSweepInExecutor();
+		}
+	}
+
+	private class DoSweep implements Callable<Boolean>,Runnable {
+		public Boolean call() throws Exception {
+			return queueingSweep();
+		}
+
+		public void run() {
+			queueingSweep();
+		}
+	}
+
+	private Future<Boolean> enqueueSweepInService(final ExecutorService service) {
+		return service.submit((Callable<Boolean>)new DoSweep());
+	}
+
+	private Future<Boolean> enqueueSweepInExecutor() {
+		return new ExecutorCompletionService(
+			executor, new ArrayBlockingQueue<Future<Boolean>>(1,false)
+		).submit(new DoSweep());
 	}
 
 }
