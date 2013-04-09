@@ -15,3 +15,12 @@ javadoc {
 		verbose = true
 	}
 }
+
+task wrapper(type:Wrapper) {
+  description = "Generates the Gradle wrapper so people without Gradle installed can use our build"
+  group = "Build Infrastructure"
+
+  gradleVersion = "1.5"
+  jarFile = "gradle-wrapper/wrapper.jar"
+}
+
