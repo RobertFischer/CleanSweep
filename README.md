@@ -46,11 +46,9 @@ Features
 Proper Usage
 -------------
 
-* Install [Gradle](http://gradle.org) if you do not have it.
-
 * Check out this code. 
 
-* Execute `gradle clean jar javadoc` in the root directory of the project. 
+* Execute `./gradlew clean jar javadoc` in the root directory of the project. 
 
 * The jar and the JavaDoc are under `./build/libs` and `./build/docs/javadoc`, respectively.
 
