@@ -26,22 +26,25 @@ s.onGC(someObjectToTrack, new Runnable() {
 	}
 });
 
-s.onSoftGC(someObjectToTrack, new Sweeper.SweepAction<SomeObjectToTracksType>() {
+s.onWeakGC(someObjectToTrack, new Sweeper.SweepAction<SomeObjectToTracksType>() {
 	public void run() {
 		/* Implement behavior to perform when the object is softly reachable here */
 		/* The object can be retrieved by calling getTarget(). */
 	}
 });
+
 ```
 
 Features
 -----------
 
-* Sane concurrency configuration provided by default, or override it with your own `Executor` or `ThreadFactory`.
+* Sane concurrency configuration provided by default, or override it with your favorite `Executor` or `ThreadFactory`.
 
-* Execute code on garbage collection or right before garbage collection (softly reachable).
+* Execute code on garbage collection or right before garbage collection (weakly reachable).
 
-* Simple, object-oriented API.
+* Ability to register a shutdown hook, whether or not to do background sweeping, and different strategies for sweeping.
+
+* Extremely simple API.
 
 Proper Usage
 -------------
@@ -62,6 +65,17 @@ Lazy Usage
 * Use your favorite code inspector to see the documentation for `com.smokejumperit.cleanSweep.Sweeper`.
 
 * Enjoy.
+
+Usage Notes
+--------------
+
+* *MAKE SURE YOU DO NOT HOLD ONTO A REFERENCE OF THE TARGET IN THE HANDLER.* Your handler counts as a root, so if you
+  are holding onto a reference to the object that you want to get garbage collected, it will never get garbage collected
+	and your code will never be executed.
+
+* If you really don't want to use any kind of threading for some reason, then just pass the trivial `Executor` that calls
+	`action.run()` on the tasks. Be sure to disable background threading through the `(Executor,boolean)` constructor, though,
+	or your main thread will block forever.
 
 License
 ---------
