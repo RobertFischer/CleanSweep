@@ -1,5 +1,4 @@
-package com.smokejumperit.cleanSweep;
-
+package com.smokejumperit.cleanSweep; 
 import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -12,6 +11,7 @@ public class Sweeper {
 
 	private final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
 	private final Executor executor;	
+	private volatile boolean shutdown = false;
 
 	private interface RunnableReference extends Runnable {
 		public Runnable consumeAction();
@@ -158,11 +158,16 @@ public class Sweeper {
 						executor.execute(ref);
 					}
 
-					// Now queue ourselves up to run again
-					executor.execute(this);
+					// Check to see if we should be done
+					if(isShutdown()) {
+						return;
+					} else {
+						// Queue ourselves up to run again
+						executor.execute(this);
+					}
 				} catch(InterruptedException e) {
 					if(ref != null) {
-						bag.remove(ref);
+						new RemoveFromBag(ref).run();
 						ref.run();
 					}
 					return;
@@ -179,19 +184,9 @@ public class Sweeper {
 	public void registerShutdownHook() {
 		Thread t = new Thread(new Runnable() {
 			public void run() {
-				// Reject any new tasks
-				if(executor instanceof ExecutorService) {
-					((ExecutorService)executor).shutdown();
-				}
-
-				// Execute everything in the queue, trying to do it on GC if possible
-				sweep();
-				Runnable action = null;
-				while((action = bag.poll()) != null) {
-					action.run();
-					action = null;
-					Thread.yield();
-					sweep();
+				// Shutdown and process the rest of the tasks
+				for(Runnable r : shutdown()) {
+					r.run();
 				}
 			}
 		});
@@ -204,6 +199,7 @@ public class Sweeper {
 	* More precisely, it is performed at some point after the key becomes weakly reachable.
 	*/
 	public <T> void onWeakGC(final T key, final SweepAction<T> behavior) {
+		if(isShutdown()) throw new RejectedExecutionException("Shutdown. Will not process: " + key);
 		bag.add(new RunnableWeakReference<T>(key, behavior));
 	}
 
@@ -212,6 +208,7 @@ public class Sweeper {
 	* More precisely, it is performed at some point after the key becomes weakly reachable.
 	*/
 	public <T> void onWeakGC(final T key, final Runnable behavior) {
+		if(isShutdown()) throw new RejectedExecutionException("Shutdown. Will not process: " + key);
 		bag.add(new RunnableWeakReference<T>(key, behavior));
 	}
 
@@ -219,6 +216,7 @@ public class Sweeper {
 	* Register an action to be performed after the key is garbage collected.
 	*/
 	public void onGC(final Object key, final Runnable behavior) {
+		if(isShutdown()) throw new RejectedExecutionException("Shutdown. Will not process: " + key);
 		bag.add(new RunnablePhantomReference(key, behavior));
 	}
 
@@ -253,6 +251,7 @@ public class Sweeper {
 	* the keys may not have been grabage collected for the returned Runnables.
 	*/
 	public List<Runnable> shutdown() {
+		shutdown = true;
 		List<Runnable> toProcess = new ArrayList<Runnable>();
 		toProcess.addAll(bag);
 		if(executor instanceof ExecutorService) {
@@ -350,6 +349,13 @@ public class Sweeper {
 		return new ExecutorCompletionService(
 			executor, new ArrayBlockingQueue<Future<Boolean>>(1,false)
 		).submit(new DoSweep());
+	}
+
+	/**
+	* Whether this sweeper has been shut down.
+	*/
+	public boolean isShutdown() {
+		return shutdown;
 	}
 
 }
