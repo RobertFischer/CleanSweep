@@ -80,6 +80,11 @@ Usage Notes
 	`action.run()` on the tasks. Be sure to disable background threading through the `(Executor,boolean)` constructor, though,
 	or your main thread will block forever.
 
+* If you allow background sweeping to happen or register the shutdown hook, you can actually let the Sweeper go out of scope.
+	It won't be garbage collected, though, and any background thread will simply block indefinitely, so I suggest against 
+	spawning a bunch of them in a loop. A future version of this may have one static background thread and would detect when
+	the Sweeper itself is garbage collected, but that's future fanciness.
+
 License
 ---------
 
