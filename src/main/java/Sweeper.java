@@ -189,8 +189,8 @@ public class Sweeper {
 
 	/**
 	* Registers a shutdown hook to execute the clean-up on anything that didn't get GC'ed.
-	* Note that cleanup will be executed for any keys that are still alive. See also caveats
-	* from {@link Runtime#addShutdownHook(Thread)}.
+	* <b>Note that cleanup will be executed for any keys that are still alive.</b>
+	* See also caveats from {@link Runtime#addShutdownHook(Thread)}.
 	*/
 	public void registerShutdownHook() {
 		Thread t = new Thread(new Runnable() {
@@ -200,15 +200,14 @@ public class Sweeper {
 					((ExecutorService)executor).shutdown();
 				}
 
-				// Execute everything in the queue
+				// Execute everything in the queue, trying to do it on GC if possible
+				sweep();
 				Runnable action = null;
-				while(
-					((action = (RunnableReference)queue.poll()) != null) ||
-					((action = bag.poll()) != null)
-				) {
+				while((action = bag.poll()) != null) {
 					action.run();
 					action = null;
 					Thread.yield();
+					sweep();
 				}
 			}
 		});
@@ -297,7 +296,9 @@ public class Sweeper {
 		while( (action = (RunnableReference)queue.poll()) != null) {
 			bag.remove(action);
 			action.run();
+			action = null;
 			workFound = true;
+			Thread.yield();
 		}
 		return workFound;
 	}
@@ -314,6 +315,8 @@ public class Sweeper {
 			workFound = true;
 			executor.execute(new RemoveFromBag(action));
 			executor.execute(action);
+			action = null;
+			Thread.yield();
 		}
 		return workFound;
 	}
