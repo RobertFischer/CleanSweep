@@ -160,7 +160,7 @@ public class Sweeper {
 
 					// Now queue ourselves up to run again
 					executor.execute(this);
-				} catch(Exception e) {
+				} catch(InterruptedException e) {
 					if(ref != null) {
 						bag.remove(ref);
 						ref.run();
